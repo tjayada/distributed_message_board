@@ -4,6 +4,7 @@
 from flask import Flask, request, render_template, jsonify
 import json
 import requests
+import math
 
 # Class-based application configuration
 class ConfigClass(object):
@@ -83,6 +84,16 @@ def send_message():
         return "No timestamp", 400
     # add message to messages
     messages = read_messages()
+    
+    
+    sentence = message['content']
+    num = math.ceil(len(sentence.split(" "))/3)
+    decoded = ""
+    for i in range(num):
+        words = " ".join(sentence.split(" ")[i*3:i*3+3])
+        decoded += translate(words, num_beams=4, do_sample=True, max_length=100)
+
+    message['content'] = decoded
     messages.append({'content':message['content'], 'sender':message['sender'], 'timestamp':message['timestamp']})
     save_messages(messages)
     return "OK", 200
@@ -105,6 +116,21 @@ def save_messages(messages):
     with open(CHANNEL_FILE, 'w') as f:
         json.dump(messages, f)
 
+
+def translate(sentence, **argv):
+    inputs = tokenizer(sentence, return_tensors="pt")
+    generated_ids = generator.generate(inputs["input_ids"], **argv)
+    decoded = tokenizer.decode(generated_ids[0], skip_special_tokens=True).replace(" ", "")
+    return decoded
+
+
 # Start development web server
 if __name__ == '__main__':
+    from transformers import BartTokenizer, BartForConditionalGeneration
+
+    path = "KomeijiForce/bart-base-emojilm"
+    global tokenizer, generator
+    tokenizer = BartTokenizer.from_pretrained(path)
+    generator = BartForConditionalGeneration.from_pretrained(path)
+
     app.run(port=5001, debug=True)
