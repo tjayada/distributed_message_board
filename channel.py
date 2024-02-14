@@ -21,7 +21,7 @@ app.app_context().push()  # create an app context before initializing db
 HUB_URL = 'http://localhost:5555'
 HUB_AUTHKEY = '1234567890'
 CHANNEL_AUTHKEY = '0987654321'
-CHANNEL_NAME = "The One and Only Channel"
+CHANNEL_NAME = "👫❤️📺💻❤️"
 CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
 CHANNEL_FILE = 'messages.json'
 
@@ -96,6 +96,23 @@ def send_message():
     message['content'] = decoded
     messages.append({'content':message['content'], 'sender':message['sender'], 'timestamp':message['timestamp']})
     save_messages(messages)
+
+    ###############################################################################
+    # add chatbot response here
+    # essentially do the same as above, but need to create answer
+    ###############################################################################
+    # 1. read sentence from user
+        # line 89
+    # 2. do some ELIZA-style transformation
+        # need to write a function to do this
+        # but online many examples
+    # 3. translate that to emoji
+        # line 90 to 94
+    # 4. save the message as well
+        # line 96 to 98
+
+
+
     return "OK", 200
 
 def read_messages():
