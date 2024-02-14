@@ -24,24 +24,32 @@
             </div>
             
             {% if channel %}
-                {% for message in messages %}
-                    <div class="row" style="background-color: #4e8dd0; border-radius: 10px; margin-bottom: 10px;">
-                        <div class="col-md-12">
-                            <h2>{{ message.sender }}</h2>
-                            <p>{{ message.content }}</p>
-                            <p style="font-size: 60%">{{ message.timestamp }}</p>
-                        </div>      
-                    </div>
-                {% endfor %}
-            {% endif %}  
+                <div class="overflow-auto" style="max-height: 60vh;">
+                    {% for message in messages %}
+                        <div class="d-flex mb-3" style="background-color: #4e8dd0; border-radius: 10px;">
+                            <div class="p-2">
+                                <h2>{{ message.sender }}</h2>
+                                <p>{{ message.content }}</p>
+                                <p style="font-size: 60%">{{ message.timestamp }}</p>
+                            </div>      
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}    
             
             <div class="row">
                 <div class="col-md-12">
-                    <form action="post" method="post">
+                    <form action="post" method="post" class="p-3">
                         <input type="hidden" name="channel" value="{{ channel.endpoint | urlencode }}">
-                        Sender: <input type="text" name="sender" id="sender"> <br>
-                        Message: <input type="text" name="content" id="content"> <br>
-                        <input type="submit" value="Post">
+                        <div class="form-group">
+                            <label for="sender">Sender:</label>
+                            <input type="text" class="form-control" name="sender" id="sender" value="{{ session['sender'] if 'sender' in session else '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="content">Message:</label>
+                            <input type="text" class="form-control" name="content" id="content">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post</button>
                     </form>
                 </div>
             </div>

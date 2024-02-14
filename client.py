@@ -1,9 +1,8 @@
-from flask import Flask, request, render_template, url_for, redirect
+from flask import Flask, request, render_template, url_for, redirect, session
 import requests
 import urllib.parse
 import datetime
 
-app = Flask(__name__)
 
 HUB_AUTHKEY = '1234567890'
 HUB_URL = 'http://localhost:5555'
@@ -11,6 +10,8 @@ HUB_URL = 'http://localhost:5555'
 CHANNELS = None
 LAST_CHANNEL_UPDATE = None
 
+app = Flask(__name__)
+app.secret_key = 'your secret key'
 
 def update_channels():
     global CHANNELS, LAST_CHANNEL_UPDATE
@@ -69,6 +70,8 @@ def post_message():
         return "Channel not found", 404
     message_content = request.form['content']
     message_sender = request.form['sender']
+    if request.method == 'POST':
+        session['sender'] = message_sender
     message_timestamp = datetime.datetime.now().isoformat()
     response = requests.post(channel['endpoint'],
                              headers={'Authorization': 'authkey ' + channel['authkey']},
