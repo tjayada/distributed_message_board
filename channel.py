@@ -18,12 +18,19 @@ app = Flask(__name__)
 app.config.from_object(__name__ + '.ConfigClass')  # configuration
 app.app_context().push()  # create an app context before initializing db
 
+# if on server comment out the following lines
 HUB_URL = 'http://localhost:5555'
+CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
+# else use the following line
+#HUB_URL = 'http://vm954.rz.uni-osnabrueck.de/user039/hub.wsgi'
+#CHANNEL_ENDPOINT = "http://vm954.rz.uni-osnabrueck.de/user039/channel.wsgi"
+
+
 HUB_AUTHKEY = '1234567890'
 CHANNEL_AUTHKEY = '0987654321'
 CHANNEL_NAME = "👫❤️📺💻❤️"
-CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
 CHANNEL_FILE = 'messages.json'
+
 
 @app.cli.command('register')
 def register_command():
@@ -85,31 +92,16 @@ def send_message():
     # add message to messages
     messages = read_messages()
     
-    
-    sentence = message['content']
-    num = math.ceil(len(sentence.split(" "))/3)
-    decoded = ""
-    for i in range(num):
-        words = " ".join(sentence.split(" ")[i*3:i*3+3])
-        decoded += translate(words, num_beams=4, do_sample=True, max_length=100)
-
-    message['content'] = decoded
     messages.append({'content':message['content'], 'sender':message['sender'], 'timestamp':message['timestamp']})
     save_messages(messages)
 
     ###############################################################################
     # add chatbot response here
-    # essentially do the same as above, but need to create answer
     ###############################################################################
-    # 1. read sentence from user
-        # line 89
-    # 2. do some ELIZA-style transformation
-        # need to write a function to do this
-        # but online many examples
-    # 3. translate that to emoji
-        # line 90 to 94
-    # 4. save the message as well
-        # line 96 to 98
+    
+    # post = message['content']
+    # answer = chatbot.get_response(post)
+    # messages.append({'content':answer, 'sender':'chatbot', 'timestamp':datetime.datetime.now().isoformat()})
 
 
 
@@ -134,20 +126,6 @@ def save_messages(messages):
         json.dump(messages, f)
 
 
-def translate(sentence, **argv):
-    inputs = tokenizer(sentence, return_tensors="pt")
-    generated_ids = generator.generate(inputs["input_ids"], **argv)
-    decoded = tokenizer.decode(generated_ids[0], skip_special_tokens=True).replace(" ", "")
-    return decoded
-
-
 # Start development web server
 if __name__ == '__main__':
-    from transformers import BartTokenizer, BartForConditionalGeneration
-
-    path = "KomeijiForce/bart-base-emojilm"
-    global tokenizer, generator
-    tokenizer = BartTokenizer.from_pretrained(path)
-    generator = BartForConditionalGeneration.from_pretrained(path)
-
     app.run(port=5001, debug=True)

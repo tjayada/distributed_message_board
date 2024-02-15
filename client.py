@@ -5,7 +5,11 @@ import datetime
 
 
 HUB_AUTHKEY = '1234567890'
+
+# if on server comment out the following lines
 HUB_URL = 'http://localhost:5555'
+# else use the following line
+#HUB_URL = 'http://vm954.rz.uni-osnabrueck.de/user039/hub.wsgi'
 
 CHANNELS = None
 LAST_CHANNEL_UPDATE = None
