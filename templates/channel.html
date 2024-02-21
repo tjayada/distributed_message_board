@@ -26,13 +26,25 @@
             {% if channel %}
                 <div id="messages" class="overflow-auto" style="max-height: 60vh;">
                     {% for message in messages %}
-                        <div class="d-flex mb-3" style="background-color: #4e8dd0; border-radius: 10px;">
-                            <div class="p-2">
-                                <h2>{{ message.sender }}</h2>
-                                <p>{{ message.content }}</p>
-                                <p style="font-size: 60%">{{ message.timestamp }}</p>
-                            </div>      
-                        </div>
+                        {% if message.sender == "TriviaBot" %}
+                            <!-- Bot message style -->
+                            <div class="d-flex mb-3" style="background-color: #f0ad4e; border-radius: 10px;"> <!-- Bot messages in a different color -->
+                                <div class="p-2">
+                                    <h2>{{ message.sender }}</h2>
+                                    <p>{{ message.content }}</p>
+                                    <p style="font-size: 60%">{{ message.timestamp }}</p>
+                                </div>      
+                            </div>
+                        {% else %}
+                            <!-- User message style -->
+                            <div class="d-flex mb-3" style="background-color: #4e8dd0; border-radius: 10px;"> <!-- Original color for user messages -->
+                                <div class="p-2">
+                                    <h2>{{ message.sender }}</h2>
+                                    <p>{{ message.content }}</p>
+                                    <p style="font-size: 60%">{{ message.timestamp }}</p>
+                                </div>      
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             {% endif %}

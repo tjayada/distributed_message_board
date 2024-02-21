@@ -1,5 +1,10 @@
 flask
 flask-sqlalchemy
 requests
-transformers
-torch
+# transformers
+# torch
+
+# trivia bot requirements
+pandas
+nltk
+scikit-learn
