@@ -1,6 +1,6 @@
 # Distributed Message Board
 
-This is a distributed message board application that allows users to post messages and view messages posted by others. It is built using [technology/framework/library].
+This is a distributed message board application that allows users to post messages, get trivia via bots and view messages posted by others. It is mainly built using Flask.
 
 ## Features
 
