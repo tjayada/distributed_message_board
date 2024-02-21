@@ -3,3 +3,4 @@ api_venv/
 instance/
 __pycache__/
 messages.json
+.DS_Store

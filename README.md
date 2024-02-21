@@ -7,13 +7,13 @@ This is a distributed message board application that allows users to post messag
 - Accessing channels via hub
 - Posting messages
 - Viewing messages
-- [Additional features]
+- Default Trivia Channel with Bot replying
 
 ## Installation
 
-1. Clone the repository.
-2. Install the dependencies using [package manager].
-3. [Additional installation steps, if any]
+1. Clone the repository
+2. Install the dependencies in requirements.txt
+3. See Usage below
 
 ## Usage
 
@@ -23,17 +23,16 @@ This is a distributed message board application that allows users to post messag
 
 2.
 
-	python channel.py
+	python trivia_channel.py
 
 3.
 
-	flask --app channel.py register
+	flask --app trivia_channel.py register
 	
 4.
 
 	python client.py
 
-## To-do
+## Screenshot
 
-1. Add chatbot in channel.py at line ~100
-2. 
+<img src="./templates/Screenshot.png">

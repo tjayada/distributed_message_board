@@ -5,6 +5,8 @@ from flask import Flask, request, render_template, jsonify
 import json
 import requests
 import math
+import html
+from datetime import datetime
 
 # imports for chatbot's database creation
 import requests
@@ -37,10 +39,15 @@ CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the botto
 CHANNEL_FILE = 'messages.json'
 DATA_FILE = 'data/triviabot/questions.json'
 
+#HUB_URL = 'http://vm954.rz.uni-osnabrueck.de/user039/hub.wsgi'
+#CHANNEL_ENDPOINT = "http://vm954.rz.uni-osnabrueck.de/user039/trivia_channel.wsgi"
+
 # Initialize global variables
 cosine_similarity_threshold = 0.25
 trivia_df = pd.read_json(DATA_FILE)
 vectorizer = None
+send_answer = False
+last_answer = None
 
 @app.cli.command('register')
 def register_command():
@@ -90,7 +97,7 @@ def home_page():
 # POST: Send a message
 @app.route('/', methods=['POST'])
 def send_message():
-    global trivia_df, vectorizer, cosine_similarity_threshold
+    global trivia_df, vectorizer, cosine_similarity_threshold, send_answer, last_answer
     
     # fetch channels from server
     # check authorization header
@@ -112,24 +119,18 @@ def send_message():
     
     sentence = message['content']
 
-    message['content'] = sentence
-    messages.append({'content':message['content'], 'sender':message['sender'], 'timestamp':message['timestamp']})
+    # Get the current date and time
+    now = datetime.now()
+    timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")
+
+    messages.append({'content':message['content'], 'sender':message['sender'], 'timestamp': timestamp})
     save_messages(messages)
 
     ###############################################################################
     # add chatbot response here
     # essentially do the same as above, but need to create answer
     ###############################################################################
-    # 1. read sentence from user
-        # line 89
-    # 2. do some ELIZA-style transformation
-        # need to write a function to do this
-        # but online many examples
-    # 3. translate that to emoji
-        # line 90 to 94
-    # 4. save the message as well
-        # line 96 to 98
-    
+
     if vectorizer is None:
         trivia_df, vectorizer = create_trivia()
     
@@ -140,31 +141,42 @@ def send_message():
     trivia_df['cosine_similarity'] = cosine_similarities.flatten()
     df_sorted_by_cosine = trivia_df.sort_values(by='cosine_similarity', ascending=False)
     
+    if send_answer:
+        now = datetime.now()
+        timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")
+        messages.append({'content':last_answer, 'sender':"TriviaBot", 'timestamp':timestamp})
+        save_messages(messages)
+        send_answer = False
+        return "OK", 200
     # Check if the top match is above the threshold
-    if df_sorted_by_cosine.iloc[0]['cosine_similarity'] >= cosine_similarity_threshold:
+    elif df_sorted_by_cosine.iloc[0]['cosine_similarity'] >= cosine_similarity_threshold:
         # most similar question
         
         # question, answer, incorrect_answers, type_of_question, similarity = df_sorted_by_cosine.iloc[0]['question', 'correct_answer', 'incorrect_answers', 'type', 'cosine_similarity']
         question, answer, incorrect_answers, type_of_question, similarity = df_sorted_by_cosine.iloc[0][['question', 'correct_answer', 'incorrect_answers', 'type', 'cosine_similarity']]
         row = df_sorted_by_cosine.iloc[0]
-        question = row['question']
-        answer = row['correct_answer']
-        incorrect_answers = row['incorrect_answers']
-        type_of_question = row['type']
+        question = html.unescape(row['question'])
+        last_answer = html.unescape(row['correct_answer'])
+        incorrect_answers = html.unescape(row['incorrect_answers'])
+        type_of_question = html.unescape(row['type'])
         similarity = row['cosine_similarity']
+        
+        now = datetime.now()
+        timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")
         
         # add bot reply to messages...
         print("Computer sagt JA!!")
-        messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':time.time()})
+        messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':timestamp})
         save_messages(messages)
+        send_answer = True
     
     else:
         question, answer, incorrect_answers, type_of_question, similarity = df_sorted_by_cosine.iloc[0][['question', 'correct_answer', 'incorrect_answers', 'type', 'cosine_similarity']]
         row = df_sorted_by_cosine.iloc[0]
-        question = row['question']
-        answer = row['correct_answer']
-        incorrect_answers = row['incorrect_answers']
-        type_of_question = row['type']
+        question = html.unescape(row['question'])
+        answer = html.unescape(row['correct_answer'])
+        incorrect_answers = html.unescape(row['incorrect_answers'])
+        type_of_question = html.unescape(row['type'])
         similarity = row['cosine_similarity']
         
         print("Computer sagt nein!!", similarity)
