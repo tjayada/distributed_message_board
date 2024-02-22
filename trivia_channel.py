@@ -7,6 +7,7 @@ import requests
 import math
 import html
 from datetime import datetime
+import random
 
 # imports for chatbot's database creation
 import requests
@@ -31,16 +32,17 @@ app = Flask(__name__)
 app.config.from_object(__name__ + '.ConfigClass')  # configuration
 app.app_context().push()  # create an app context before initializing db
 
-HUB_URL = 'http://localhost:5555'
-HUB_AUTHKEY = '1234567890'
+HUB_URL = 'https://temporary-server.de'
+HUB_AUTHKEY = 'Crr-K3d-2N'
 CHANNEL_AUTHKEY = '0987654321'
 CHANNEL_NAME = "Trivia Channel"
-CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
+
+#CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
 CHANNEL_FILE = 'messages.json'
 DATA_FILE = 'data/triviabot/questions.json'
 
 #HUB_URL = 'http://vm954.rz.uni-osnabrueck.de/user039/hub.wsgi'
-#CHANNEL_ENDPOINT = "http://vm954.rz.uni-osnabrueck.de/user039/trivia_channel.wsgi"
+CHANNEL_ENDPOINT = "http://vm954.rz.uni-osnabrueck.de/user191/trivia_channel.wsgi"
 
 # Initialize global variables
 cosine_similarity_threshold = 0.25
@@ -48,6 +50,41 @@ trivia_df = pd.read_json(DATA_FILE)
 vectorizer = None
 send_answer = False
 last_answer = None
+
+def update_score(username, correct):
+    # Assuming this function updates the score in scores.json
+    scores_file = 'scores.json'
+    try:
+        with open(scores_file, 'r') as file:
+            scores = json.load(file)
+    except FileNotFoundError:
+        scores = {}
+    
+    # Update or initialize the user's score
+    if username in scores and correct:
+        scores[username] += 1
+    elif username not in scores:
+        scores[username] = 1 if correct else 0
+    
+    # Write the updated scores back to the file
+    with open(scores_file, 'w') as file:
+        json.dump(scores, file)
+    
+    return scores.get(username, 0)
+
+@app.route('/scores', methods=['GET'])
+def show_scores():
+    scores_file = 'scores.json'
+    try:
+        with open(scores_file, 'r') as file:
+            scores = json.load(file)
+        return jsonify(scores)
+    except FileNotFoundError:
+        return jsonify({"error": "No scores available."}), 404
+
+
+
+
 
 @app.cli.command('register')
 def register_command():
@@ -142,12 +179,27 @@ def send_message():
     df_sorted_by_cosine = trivia_df.sort_values(by='cosine_similarity', ascending=False)
     
     if send_answer:
+        user_answer = message['content'].strip().lower()  # Normalize user answer for comparison
+        correct_answer = last_answer.strip().lower()  # Ensure we compare in the same format
+        correct = user_answer == correct_answer
+        user_score = update_score(message['sender'], correct)  # Update score and retrieve new score
+
+        # Prepare the bot's response message including the score
+        if correct:
+            response_content = f"Correct! Good job. Your score is now {user_score}."
+        else:
+            response_content = f"Sorry, that's not right. The correct answer was '{last_answer}'. Your score is {user_score}."
+
         now = datetime.now()
         timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")
-        messages.append({'content':last_answer, 'sender':"TriviaBot", 'timestamp':timestamp})
+        messages.append({'content': response_content, 'sender': "TriviaBot", 'timestamp': timestamp})
         save_messages(messages)
-        send_answer = False
+
+        send_answer = False  # Reset the flag as we've now responded to the answer
         return "OK", 200
+
+
+
     # Check if the top match is above the threshold
     elif df_sorted_by_cosine.iloc[0]['cosine_similarity'] >= cosine_similarity_threshold:
         # most similar question
@@ -166,9 +218,21 @@ def send_message():
         
         # add bot reply to messages...
         print("Computer sagt JA!!")
-        messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':timestamp})
+        messages.append({'content': question, 'sender': "TriviaBot", 'timestamp': timestamp})
+
         if type_of_question == 'multiple':
-            messages.append({'content':f"{", ".join(incorrect_answers)}", 'sender':"TriviaBot", 'timestamp':time.time()})
+            # Combine correct and incorrect answers, then shuffle
+            all_answers = incorrect_answers + [last_answer]  # Assume incorrect_answers is a list and last_answer is a string
+            random.shuffle(all_answers)  # Shuffle the answers to randomize their order
+
+            # Format the combined answers for presentation
+            formatted_answers = ', '.join(all_answers)
+            
+            # Add formatted answers to messages
+            now = datetime.now()  # Reuse the datetime object if you want to keep the same timestamp
+            timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")  # Ensure consistent timestamp formatting
+            messages.append({'content': formatted_answers, 'sender': "TriviaBot", 'timestamp': timestamp})
+
         save_messages(messages)
         send_answer = True
     
