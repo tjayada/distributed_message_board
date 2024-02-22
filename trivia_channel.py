@@ -167,6 +167,8 @@ def send_message():
         # add bot reply to messages...
         print("Computer sagt JA!!")
         messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':timestamp})
+        if type_of_question == 'multiple':
+            messages.append({'content':f"{", ".join(incorrect_answers)}", 'sender':"TriviaBot", 'timestamp':time.time()})
         save_messages(messages)
         send_answer = True
     
