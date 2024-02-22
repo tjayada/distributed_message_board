@@ -7,6 +7,7 @@ import requests
 import math
 import html
 from datetime import datetime
+import random
 
 # imports for chatbot's database creation
 import requests
@@ -144,7 +145,10 @@ def send_message():
     if send_answer:
         now = datetime.now()
         timestamp = now.strftime("%H:%M:%S - %d/%m/%Y")
-        messages.append({'content':last_answer, 'sender':"TriviaBot", 'timestamp':timestamp})
+        if sentence.lower().strip() == last_answer.lower().strip():
+            messages.append({'content':"Correct!", 'sender':"TriviaBot", 'timestamp':timestamp})
+        else:
+            messages.append({'content':last_answer, 'sender':"TriviaBot", 'timestamp':timestamp})
         save_messages(messages)
         send_answer = False
         return "OK", 200
@@ -157,7 +161,7 @@ def send_message():
         row = df_sorted_by_cosine.iloc[0]
         question = html.unescape(row['question'])
         last_answer = html.unescape(row['correct_answer'])
-        incorrect_answers = html.unescape(row['incorrect_answers'])
+        incorrect_answers = row['incorrect_answers']
         type_of_question = html.unescape(row['type'])
         similarity = row['cosine_similarity']
         
@@ -166,9 +170,19 @@ def send_message():
         
         # add bot reply to messages...
         print("Computer sagt JA!!")
-        messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':timestamp})
+
         if type_of_question == 'multiple':
-            messages.append({'content':f"{", ".join(incorrect_answers)}", 'sender':"TriviaBot", 'timestamp':time.time()})
+            temp_list = incorrect_answers.copy()
+            temp_list.append(answer)
+            random.shuffle(temp_list)
+            question += " <br> "
+            for idx, answer in enumerate(temp_list):
+                question += f" <br> {idx+1}. {html.unescape(answer)}"
+            #messages.append({'content':f"{", ".join(incorrect_answers)}", 'sender':"TriviaBot", 'timestamp':time.time()})
+        elif type_of_question == 'boolean':
+            question += " <br> <br> 1. True <br> 2. False"       
+        messages.append({'content':question, 'sender':"TriviaBot", 'timestamp':timestamp})
+        
         save_messages(messages)
         send_answer = True
     
